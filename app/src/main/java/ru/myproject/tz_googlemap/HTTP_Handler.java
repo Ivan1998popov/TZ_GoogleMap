@@ -12,19 +12,19 @@ import java.net.URL;
 
 import static android.content.ContentValues.TAG;
 
-public class HTTP_Handler {
+class HTTP_Handler {
 
 
-    public HTTP_Handler() {
+    HTTP_Handler() {
 
     }
 
-    public String makeServiceCall(String reqUrl) {
+    String makeServiceCall(String reqUrl) {
         String response = null;
         try {
             URL url = new URL(reqUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            if(conn.getResponseCode()==HttpURLConnection.HTTP_OK){
+            if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
                 conn.setRequestMethod("GET");
                 // read the response
 
@@ -42,10 +42,10 @@ public class HTTP_Handler {
         return response;
     }
 
-    private String convertStreamToString( HttpURLConnection conn) {
+    private String convertStreamToString(HttpURLConnection conn) {
 
         StringBuilder sb = new StringBuilder();
-        BufferedReader reader = null;
+        BufferedReader reader;
         String line;
         try {
             reader = new BufferedReader(new InputStreamReader(conn.getInputStream()),

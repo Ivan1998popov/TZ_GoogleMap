@@ -1,43 +1,70 @@
 package ru.myproject.tz_googlemap;
 
+import android.annotation.SuppressLint;
 import android.os.AsyncTask;
-import android.util.Log;
+
+import com.google.maps.android.clustering.ClusterManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class JsonParser extends AsyncTask<String, String, String> {
+public class JsonParser extends AsyncTask<Void, Void, List<Coordinates>> {
 
-    @Override
-    protected void onPreExecute() {
-        super.onPreExecute();
+    private ClusterManager<MyItem> mClusterManager;
+    private List<Coordinates> mCoordinates = new ArrayList<>();
 
+    @SuppressLint("StaticFieldLeak")
+    private MapsActivity mapsActivity;
+
+
+    JsonParser(MapsActivity mapsActivity) {
+        this.mapsActivity = mapsActivity;
     }
 
+
     @Override
-    protected String doInBackground(String... params) {
-        HTTP_Handler http_handler=new HTTP_Handler();
-        String url = "https://dev.skif.me/coordinates.json";
-        String jsonStr = http_handler.makeServiceCall(url);
+    protected List<Coordinates> doInBackground(Void... voids) {
+        HTTP_Handler http_handler = new HTTP_Handler();
+        String url =mapsActivity.getResources().getString(R.string.json);
 
         try {
-            JSONArray jsonArray =new JSONArray(http_handler.makeServiceCall(url));
-            System.out.println();
+            JSONArray jsonArray = new JSONArray(http_handler.makeServiceCall(url));
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONArray innerArray = jsonArray.getJSONArray(i);
+                mCoordinates.add(new Coordinates(innerArray.getString(0),
+                        innerArray.getString(1), innerArray.getString(2)));
+            }
+            //  System.out.println("/////// " + mCoordinates.size());
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
-
-        Log.e("TAG", "Response from url: " + jsonStr);
-        return jsonStr;
+        return mCoordinates;
     }
+
 
     @Override
-    protected void onPostExecute(String s) {
+    protected void onPostExecute(List<Coordinates> coordinates) {
+        setUpClusterer();
+        super.onPostExecute(coordinates);
+    }
 
-        System.out.println("////////////////// " + s);
-        super.onPostExecute(s);
+
+    private void setUpClusterer() {
+        mClusterManager = new ClusterManager<>(mapsActivity, mapsActivity.mMap);
+        mapsActivity.mMap.setOnCameraIdleListener(mClusterManager);
+        mapsActivity.mMap.setOnMarkerClickListener(mClusterManager);
+        addItems();
+    }
+
+    private void addItems() {
+        for (Coordinates cor : mCoordinates) {
+            MyItem offsetItem = new MyItem(Double.parseDouble(cor.getLatitude()),
+                    Double.parseDouble(cor.getLongitude()));
+            mClusterManager.addItem(offsetItem);
+        }
     }
 }
+
